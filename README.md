@@ -1,7 +1,6 @@
 # 🏦 AI Agent Chatbot for Banking Domain
 
-An intelligent **AI Agent–based Chatbot** designed for the **banking domain**, built using **LangChain agents**, **OpenAI LLMs**, **SQL**, and **external APIs**.  
-The chatbot simulates realistic banking conversations and performs SQL-based reasoning, integrates external APIs, and maintains contextual memory with controlled privacy.
+An intelligent **AI Agent–based Chatbot** designed for the **banking domain**, built using **LangChain agents**, **OpenAI LLMs**, **SQL**, and **external APIs**. The chatbot simulates realistic banking conversations and performs SQL-based reasoning, integrates external APIs, and maintains contextual memory with controlled privacy.
 
 --- 
 
