@@ -116,7 +116,7 @@ The AI Banking Chatbot will now start running in the terminal.
 ---
 
 ### CLI Screenshot
-![img.png](img.png)
+![CLI.png](screenshots/CLI.png)
 
 
 
