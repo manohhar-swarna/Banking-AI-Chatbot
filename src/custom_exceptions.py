@@ -17,6 +17,9 @@ class SearchToolExceptionError(Exception):
 
 class ChathistoryCountExceptionError(Exception):
     pass
+
+class ChatbotExceptionError(Exception):
+    pass
 #---------------------------------------------------------------------------------#
 
 
