@@ -2,14 +2,16 @@ import os
 import http.client
 import pandas as pd
 import sqlite3
-from typing import Any, Dict, List, Tuple
 
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain.tools import tool
 
+from src.config import employee_db_path
 from src.schema import (FindUserInformation, FindEmployeeInformation, FindEmployeeEmail,
                         FindEmployeeId, SearchQuery)
-from src.config import employee_db_path
+from src.custom_exceptions import (LoanDetailsExceptionError, EmployeeDetailsExceptionError,
+                                   UserDetailsExceptionError, APIExcpetionError,
+                                   SearchToolExceptionError)
 
 
 # -------------------- Tools -------------------- #
@@ -23,10 +25,12 @@ def find_loan_details() -> str:
         with open("stories/loan.txt", "r+", encoding="utf-8") as f:
             loan_details = f.read()
             return loan_details
-    except FileNotFoundError as e:
-        return "unable to find the loan document"
-        #print("Type of Exception : {}".format(type(e)))
-        #print("Exception message : {}".format(e))
+    except FileNotFoundError:
+        raise LoanDetailsExceptionError("No such file or directory, unable to find the loan document.")
+    except Exception:
+        raise LoanDetailsExceptionError("something went wrong while reading loan document."
+                                        "please check logs.")
+
 
 
 @tool(args_schema=FindUserInformation)
@@ -37,20 +41,18 @@ def find_user_information(name: str) -> list:
     try:
         df = pd.read_csv("users_info.csv")
         return df[df["user_name"] == name].to_dict(orient="records")
-    except FileNotFoundError as e:
-        return "unable to find the user info csv document"
-        #print("Type of Exception : {}".format(type(e)))
-        #print("Exception message : {}".format(e))
-    except Exception as e:
-        return "there no user_name column in the dataframe"
-        #print("Type of Exception : {}".format(type(e)))
-        #print("Exception message : {}".format(e))
+    except FileNotFoundError:
+        raise UserDetailsExceptionError("No such file or directory, unable to find the user info csv "
+                                        "document")
+    except Exception:
+        raise UserDetailsExceptionError("something went wrong while reading user document."
+                                        "please check logs.")
 
 @tool(args_schema=FindEmployeeInformation)
-def find_employee_information(name: str) -> list[tuple[(int, str)]] | str:
+def find_employee_information(name: str) -> list|str:
     """Find employee information/details/info by name
     return:
-    list[tuple[(int,str)]] | str:employee information"""
+    list|str:employee information"""
     try:
         with sqlite3.connect(employee_db_path) as connection:
             cursor = connection.cursor()
@@ -62,10 +64,11 @@ def find_employee_information(name: str) -> list[tuple[(int, str)]] | str:
             else:
                 result = emp_info
             return result
-    except sqlite3.Error as e:
-        return "Issue with retriving records from the database/table"
-        #print("Type of Exception : {}".format(type(e)))
-        #print("Exception message : {}".format(e))
+    except sqlite3.Error:
+        raise EmployeeDetailsExceptionError("Issue with retrieving records from the database/table")
+    except Exception:
+        raise EmployeeDetailsExceptionError("something went wrong while reading employee information"
+                                            "from the database. Please check logs.")
 
 @tool(args_schema=FindEmployeeEmail)
 def find_employee_email(name: str) -> str:
@@ -78,11 +81,11 @@ def find_employee_email(name: str) -> str:
             cursor.execute("Select email from emp where name=?", (name,))
             email = cursor.fetchall()[0][0]
             return email
-    except sqlite3.Error as e:
-        return "Issue with retriving records from the database/table"
-        #print("Type of Exception : {}".format(type(e)))
-        #print("Exception message : {}".format(e))
-
+    except sqlite3.Error:
+        raise EmployeeDetailsExceptionError("Issue with retrieving records from the database/table")
+    except Exception:
+        raise EmployeeDetailsExceptionError("something went wrong while reading employee email."
+                                          "Please check logs.")
 @tool(args_schema=FindEmployeeId)
 def find_employee_id(name: str) -> int:
     """Find employee id by name
@@ -94,13 +97,15 @@ def find_employee_id(name: str) -> int:
             cursor.execute("Select id from emp where name=?", (name,))
             emp_id = cursor.fetchall()[0][0]
             return emp_id
-    except sqlite3.Error as e:
-        return "Issue with retriving records from the database/table"
-        #print("Type of Exception : {}".format(type(e)))
-        #print("Exception message : {}".format(e))
+    except sqlite3.Error:
+        raise EmployeeDetailsExceptionError("Issue with retrieving records from the database/table."
+                                            " Please check logs.")
+    except Exception:
+        raise EmployeeDetailsExceptionError("something went wrong while reading employee id."
+                                            " Please check logs.")
 
 @tool
-def credit_tool() -> Dict[str, Any]:
+def credit_tool() -> str:
     """credit tool is a tool which provide information about credit or loan approvals
     return:
     JSON:credit result"""
@@ -119,10 +124,12 @@ def credit_tool() -> Dict[str, Any]:
         res = conn.getresponse()
         data = res.read()
         return data.decode("utf-8")
-    except http.client.HTTPException as e:
-        return "facing connection issue with rapidapi call"
-        #print("Type of Exception : {}".format(type(e)))
-        #print("Exception message : {}".format(e))
+    except http.client.HTTPException:
+        raise APIExcpetionError("facing connection issue with rapidapi call. Please check logs.")
+    except Exception:
+        raise APIExcpetionError("Something went wrong while accessing 3rd party credit api call."
+                                "Please check logs.")
+
 
 @tool(args_schema=SearchQuery)
 def search_tool(user_query: str) -> str:
@@ -132,5 +139,5 @@ def search_tool(user_query: str) -> str:
     try:
         search = DuckDuckGoSearchRun()
         return search.invoke(input=user_query)
-    except Exception as e:
-        return "facing issuing in web searching"
+    except Exception:
+        raise SearchToolExceptionError("Something went wrong with search engine. Please check logs.")
