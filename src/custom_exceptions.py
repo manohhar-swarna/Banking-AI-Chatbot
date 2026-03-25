@@ -20,6 +20,11 @@ class ChathistoryCountExceptionError(Exception):
 
 class ChatbotExceptionError(Exception):
     pass
+
+class LoggingSetupExceptionError(Exception):
+    pass
+
+
 #---------------------------------------------------------------------------------#
 
 
